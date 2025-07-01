@@ -110,7 +110,31 @@ static void gen_rp_realize(DeviceState *dev, Error **errp)
         d->wmask[PCI_IO_LIMIT] = 0;
     }
 
-    pcie_ide_init(d, PCI_CONFIG_SPACE_SIZE);
+    uint32_t offset = PCI_CONFIG_SPACE_SIZE;
+    /* needs to come first, or RMM does not iterate on other capabilities */
+    /* dvsec rme-da
+     * https://developer.arm.com/documentation/den0129/latest/
+     * Arm RME System Architecture
+     * 0x0000 RMEDA_ECH See B3.2.6.2.1 RME-DA Extended Capability Header
+     * 0x0004 RMEDA_HEAD1 See B3.2.6.2.2 RME-DA DVSEC Header 1
+     * 0x0008 RMEDA_HEAD2 See B3.2.6.2.3 RME-DA DVSEC Header 2
+     * 0x000C RMEDA_CTL1 See B3.2.6.2.4 RME-DA Control register 1
+     * 0x0010 RMEDA_CTL2 See B3.2.6.2.5 RME-DA Control register 2
+     */
+    pcie_add_capability(d, PCI_EXT_CAP_ID_DVSEC, 1, offset, 0x14);
+    const uint32_t header1 = 0x010013b5;
+    const uint32_t header2 = 0xFF01;
+    const uint32_t ctl1 = 0x1; /* support tdisp */
+    const uint32_t ctl2 = 0x0; /* unlocked */
+    pci_set_long(d->config + offset + 0x4, header1);
+    pci_set_long(d->config + offset + 0x8, header2);
+    pci_set_long(d->config + offset + 0xC, ctl1);
+    pci_set_long(d->config + offset + 0x10, ctl2);
+    offset += 0x14;
+
+    pcie_ide_init(d, offset);
+    offset += PCI_IDE_SIZEOF;
+
     pcie_cap_tee_init(d);
 }
 
