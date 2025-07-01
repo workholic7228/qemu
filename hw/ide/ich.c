@@ -170,7 +170,7 @@ static void pci_ich9_ahci_realize(PCIDevice *dev, Error **errp)
     pci_register_bar(dev, ICH9_MEM_BAR, PCI_BASE_ADDRESS_SPACE_MEMORY,
                      &d->ahci.mem);
 
-    pcie_endpoint_cap_init(dev, 0);
+    pcie_endpoint_cap_init(dev, 0xa8 + 0x8); /* right after SATA */
 
     sata_cap_offset = pci_add_capability(dev, PCI_CAP_ID_SATA,
                                           ICH9_SATA_CAP_OFFSET, SATA_CAP_SIZE,
