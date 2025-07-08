@@ -121,6 +121,8 @@ void pcie_cap_flr_init(PCIDevice *dev);
 void pcie_cap_flr_write_config(PCIDevice *dev,
                            uint32_t addr, uint32_t val, int len);
 
+void pcie_cap_tee_init(PCIDevice *dev);
+
 /* ARI forwarding capability and control */
 void pcie_cap_arifwd_init(PCIDevice *dev);
 void pcie_cap_arifwd_reset(PCIDevice *dev);
@@ -150,4 +152,5 @@ void pcie_cap_slot_unplug_cb(HotplugHandler *hotplug_dev, DeviceState *dev,
                              Error **errp);
 void pcie_cap_slot_unplug_request_cb(HotplugHandler *hotplug_dev,
                                      DeviceState *dev, Error **errp);
+void pcie_ide_init(PCIDevice *dev, uint16_t offset);
 #endif /* QEMU_PCIE_H */

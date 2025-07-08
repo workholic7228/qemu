@@ -965,6 +965,12 @@ void pcie_cap_flr_write_config(PCIDevice *dev,
     }
 }
 
+void pcie_cap_tee_init(PCIDevice *dev)
+{
+    pci_long_test_and_set_mask(dev->config + dev->exp.exp_cap + PCI_EXP_DEVCAP,
+                               PCI_EXP_DEVCAP_TEE);
+}
+
 /* Alternative Routing-ID Interpretation (ARI)
  * forwarding support for root and downstream ports
  */
@@ -1213,4 +1219,13 @@ void pcie_acs_reset(PCIDevice *dev)
     if (dev->exp.acs_cap) {
         pci_set_word(dev->config + dev->exp.acs_cap + PCI_ACS_CTRL, 0);
     }
+}
+
+/* IDE */
+void pcie_ide_init(PCIDevice *dev, uint16_t offset)
+{
+    pcie_add_capability(dev, PCI_EXT_CAP_ID_IDE, PCI_IDE_VER,
+                        offset, PCI_IDE_SIZEOF);
+    uint32_t cap = PCI_IDE_CAP_SELECTIVE;
+    pci_set_byte(dev->config + offset + PCI_IDE_CAP, cap);
 }

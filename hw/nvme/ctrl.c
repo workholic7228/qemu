@@ -8664,9 +8664,13 @@ static bool nvme_init_pci(NvmeCtrl *n, PCIDevice *pci_dev, Error **errp)
     pci_config_set_class(pci_conf, PCI_CLASS_STORAGE_EXPRESS);
     nvme_add_pm_capability(pci_dev, 0x60);
     pcie_endpoint_cap_init(pci_dev, 0x80);
+
+    uint16_t cap_offset = PCI_CONFIG_SPACE_SIZE;
+
     pcie_cap_flr_init(pci_dev);
     if (n->params.sriov_max_vfs) {
-        pcie_ari_init(pci_dev, 0x100);
+        pcie_ari_init(pci_dev, cap_offset);
+        cap_offset += PCI_ARI_SIZEOF;
     }
 
     if (n->params.msix_exclusive_bar && !pci_is_vf(pci_dev)) {
@@ -8731,12 +8735,9 @@ static bool nvme_init_pci(NvmeCtrl *n, PCIDevice *pci_dev, Error **errp)
 
     /* DOE Initialisation */
     if (pci_dev->spdm_port) {
-        uint16_t doe_offset = n->params.sriov_max_vfs ?
-                                  PCI_CONFIG_SPACE_SIZE + PCI_ARI_SIZEOF
-                                  : PCI_CONFIG_SPACE_SIZE;
-
-        pcie_doe_init(pci_dev, &pci_dev->doe_spdm, doe_offset,
+        pcie_doe_init(pci_dev, &pci_dev->doe_spdm, cap_offset,
                       doe_spdm_prot, true, 0);
+        cap_offset += PCI_DOE_SIZEOF;
 
         pci_dev->doe_spdm.spdm_socket = spdm_socket_connect(pci_dev->spdm_port,
                                                             errp);
@@ -8753,6 +8754,13 @@ static bool nvme_init_pci(NvmeCtrl *n, PCIDevice *pci_dev, Error **errp)
     if (n->pmr.dev) {
         nvme_init_pmr(n, pci_dev);
     }
+
+    /* IDE */
+    pcie_ide_init(pci_dev, cap_offset);
+    cap_offset += PCI_IDE_SIZEOF;
+
+    /* TEE */
+    pcie_cap_tee_init(pci_dev);
 
     return true;
 }
